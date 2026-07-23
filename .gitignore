@@ -1,0 +1,8 @@
+# build output
+/clauth
+/dist/
+*.tar.gz
+*.test
+
+# editor / OS cruft
+.DS_Store

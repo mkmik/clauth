@@ -1,0 +1,61 @@
+name: release
+
+# On every push to main: run tests, bump the minor version, tag it, and let
+# goreleaser build the cross-platform binaries and publish the GitHub release.
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: stable
+
+      - name: Test
+        run: go test ./...
+
+      - name: Compute next minor tag
+        id: tag
+        run: |
+          git fetch --tags --force
+          latest=$(git tag -l 'v*' --sort=-v:refname | head -n1)
+          if [ -z "$latest" ]; then
+            next="v0.1.0"
+          else
+            v=${latest#v}
+            major=${v%%.*}
+            rest=${v#*.}
+            minor=${rest%%.*}
+            next="v${major}.$((minor + 1)).0"
+          fi
+          echo "next=$next" >> "$GITHUB_OUTPUT"
+          echo "Next tag: $next"
+
+      - name: Create and push tag
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git tag -a "${{ steps.tag.outputs.next }}" -m "Release ${{ steps.tag.outputs.next }}"
+          git push origin "${{ steps.tag.outputs.next }}"
+
+      - uses: goreleaser/goreleaser-action@v6
+        with:
+          version: "~> v2"
+          args: release --clean
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GORELEASER_CURRENT_TAG: ${{ steps.tag.outputs.next }}
