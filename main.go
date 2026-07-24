@@ -17,7 +17,7 @@ import (
 // version is set at build time via -ldflags "-X main.version=...".
 var version = "dev"
 
-const defaultPort = 1234
+const defaultPort = 3456
 
 func main() {
 	var (

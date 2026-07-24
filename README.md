@@ -28,7 +28,7 @@ it. It prints a line like:
 ```
   clauth is ready. Open this URL in your browser to sign in to Claude Code:
 
-      https://orca-cookie.exe.xyz:1234/
+      https://orca-cookie.exe.xyz:3456/
 ```
 
 Open that URL, click **Open Claude sign in**, approve in your browser, and paste
@@ -44,8 +44,8 @@ curl -fsSL https://raw.githubusercontent.com/mkmik/clauth/main/install.sh | sh -
 
 Login is infrequent — usually right after VM creation, occasionally on a VM
 that's already serving something on the main port. `clauth` defaults to
-**`:1234`** (memorable, rarely used) and only moves to a random free port if
-1234 is taken — it prints whichever it landed on.
+**`:3456`** (memorable, rarely used) and only moves to a random free port if
+3456 is taken — it prints whichever it landed on.
 
 ## The public URL
 
@@ -55,7 +55,7 @@ name gets `.exe.xyz` appended. Override any of it:
 
 | flag / env | effect |
 |---|---|
-| `-port N` | preferred port (default 1234) |
+| `-port N` | preferred port (default 3456) |
 | `-host ADDR` | bind address (default `0.0.0.0`) |
 | `-public-host H` / `CLAUTH_PUBLIC_HOST` | force the hostname in the printed URL |
 | `-base-domain D` / `CLAUTH_BASE_DOMAIN` | domain appended to a short hostname (default `exe.xyz`) |
