@@ -12,16 +12,18 @@ Built for VMs (e.g. [exe.dev](https://exe.dev)) where the browser is never on
 the same host: it serves a tiny one-page web app, prints the public URL to open,
 and you paste back the code the sign-in shows you.
 
-## Quick start
+## Install
 
-On the VM:
+Run this on the VM:
 
 ```sh
 curl -fsSL https://raw.githubusercontent.com/mkmik/clauth/main/install.sh | sh
 ```
 
-That downloads the right binary for the VM's OS/arch and starts it. It prints a
-line like:
+## Quick start
+
+The install line above downloads the right binary for the VM's OS/arch and starts
+it. It prints a line like:
 
 ```
   clauth is ready. Open this URL in your browser to sign in to Claude Code:
