@@ -164,6 +164,22 @@ func TestPublicURL(t *testing.T) {
 	}
 }
 
+func TestServerFinishedIdempotent(t *testing.T) {
+	s := newServer(true)
+	select {
+	case <-s.done:
+		t.Fatal("done should be open before finish")
+	default:
+	}
+	s.finished()
+	s.finished() // must not panic on second close
+	select {
+	case <-s.done:
+	default:
+		t.Fatal("done should be closed after finished()")
+	}
+}
+
 func TestServerTakeFallback(t *testing.T) {
 	s := newServer(true)
 	s.remember("state1", pendingEntry{verifier: "v1", redirect: "r"})

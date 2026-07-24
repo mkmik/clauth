@@ -18,10 +18,23 @@ type server struct {
 	pending  map[string]pendingEntry
 	order    []string // insertion order, for bounded eviction
 	claudeAI bool
+
+	done     chan struct{} // closed once a login succeeds
+	doneOnce sync.Once
 }
 
 func newServer(claudeAI bool) *server {
-	return &server{pending: map[string]pendingEntry{}, claudeAI: claudeAI}
+	return &server{
+		pending:  map[string]pendingEntry{},
+		claudeAI: claudeAI,
+		done:     make(chan struct{}),
+	}
+}
+
+// finished signals that a login completed successfully and the server may stop.
+// Safe to call more than once.
+func (s *server) finished() {
+	s.doneOnce.Do(func() { close(s.done) })
 }
 
 func (s *server) remember(state string, e pendingEntry) {
@@ -94,7 +107,11 @@ func (s *server) handleFinish(w http.ResponseWriter, r *http.Request) {
 		render(w, http.StatusBadRequest, pageData{Error: "Login failed. " + err.Error()})
 		return
 	}
+	// Ask the browser to close the connection so the response flushes before the
+	// server shuts down, then signal completion.
+	w.Header().Set("Connection", "close")
 	render(w, http.StatusOK, pageData{Summary: sum})
+	s.finished()
 }
 
 // ---------------------------------------------------------------------------
@@ -162,7 +179,7 @@ credentials file <code>claude auth login</code> creates for your Pro/Max plan.</
 <li>scopes: {{range $i, $s := .Summary.Scopes}}{{if $i}} {{end}}{{$s}}{{end}}</li>
 <li>access token expires in: {{.Summary.ExpiresInSeconds}} s</li>
 <li>refresh token: {{if .Summary.HasRefreshToken}}yes{{else}}no{{end}}</li></ul>
-<p>You can close this tab and run <code>claude</code>.</p></div>
+<p>clauth has exited on the VM. Close this tab and run <code>claude</code>.</p></div>
 {{else}}
 {{if .Error}}<div class=card><p class=err>{{.Error}}</p>
 <p><a class=btn href="/">Try again</a></p></div>{{end}}

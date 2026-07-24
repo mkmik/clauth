@@ -1,13 +1,16 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
 	"flag"
 	"fmt"
 	"net"
 	"net/http"
 	"os"
+	"os/signal"
 	"strings"
+	"syscall"
 	"time"
 )
 
@@ -68,10 +71,26 @@ func serve(host string, preferred int, baseDomain, publicHostOverride string, cl
 	fmt.Println()
 
 	httpSrv := &http.Server{Handler: srv.routes(), ReadHeaderTimeout: 10 * time.Second}
-	if err := httpSrv.Serve(ln); err != nil {
-		fmt.Fprintln(os.Stderr, "clauth:", err)
-		os.Exit(1)
+	go func() {
+		if err := httpSrv.Serve(ln); err != nil && err != http.ErrServerClosed {
+			fmt.Fprintln(os.Stderr, "clauth:", err)
+			os.Exit(1)
+		}
+	}()
+
+	// Run until a login succeeds (so `curl … | sh` returns) or we're interrupted.
+	sig := make(chan os.Signal, 1)
+	signal.Notify(sig, os.Interrupt, syscall.SIGTERM)
+	select {
+	case <-srv.done:
+		fmt.Println("  Signed in — credentials written. Exiting.")
+	case <-sig:
+		fmt.Println("\n  Interrupted — exiting.")
 	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	_ = httpSrv.Shutdown(ctx)
 }
 
 // listen binds host:preferred, falling back to an OS-assigned free port.
